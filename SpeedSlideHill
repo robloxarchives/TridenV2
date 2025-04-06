@@ -1,0 +1,138 @@
+local a = game:GetService("UserInputService")
+local b = game:GetService("RunService")
+local c = workspace.CurrentCamera
+local d = game:GetService("Players")
+local e = d.LocalPlayer
+local f = Enum.KeyCode.C
+local shiftKey = Enum.KeyCode.LeftShift -- You can also check RightShift if needed
+local g = 60 -- Speed multiplier for the movement
+
+local i = false
+local j = {}
+local k = {}
+
+local m = {
+    {partName = "Bottom", partSize = Vector3.new(3, 3, 3)},
+    {partName = "Middle", partSize = Vector3.new(3, 3, 3)},
+    {partName = "Top", partSize = Vector3.new(3, 3, 3)},
+    {partName = "HLPart", partSize = Vector3.new(4, 1, 2)}
+}
+
+local function n(o, p, q)
+    q = q or 0.001
+    return math.abs(o.X - p.X) <= q and math.abs(o.Y - p.Y) <= q and math.abs(o.Z - p.Z) <= q
+end
+
+local function r(s)
+    for t, u in ipairs(m) do
+        if s:IsA("BasePart") and s.Name == u.partName and n(s.Size, u.partSize) then
+            return true
+        end
+    end
+    return false
+end
+
+local function applyVelocity(part, velocity)
+    -- Apply velocity using BodyVelocity
+    if part:IsA("BasePart") then
+        local bodyVelocity = part:FindFirstChild("BodyVelocity")
+        if not bodyVelocity then
+            bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.MaxForce = Vector3.new(500000, 500000, 500000) -- Strong enough force to move the parts
+            bodyVelocity.Parent = part
+        end
+        bodyVelocity.Velocity = velocity
+    end
+end
+
+local function removeVelocity(part)
+    -- Remove velocity when shift or C is released
+    if part:IsA("BasePart") then
+        local bodyVelocity = part:FindFirstChild("BodyVelocity")
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+        end
+    end
+end
+
+-- Handle movement while Shift + C are held down
+local function moveParts()
+    for _, part in ipairs(k) do
+        if part:IsA("BasePart") then
+            local velocity = Vector3.new(0, 0, 0)
+
+            -- Apply velocity based on camera's direction and key presses
+            if a:IsKeyDown(shiftKey) and a:IsKeyDown(f) then
+                velocity = c.CFrame.LookVector * g -- Forward direction relative to camera's LookVector
+            elseif a:IsKeyDown(shiftKey) and a:IsKeyDown(Enum.KeyCode.S) then
+                velocity = -c.CFrame.LookVector * g -- Backward direction relative to camera's LookVector
+            elseif a:IsKeyDown(shiftKey) and a:IsKeyDown(Enum.KeyCode.A) then
+                velocity = -c.CFrame.RightVector * g -- Left direction relative to camera's RightVector
+            elseif a:IsKeyDown(shiftKey) and a:IsKeyDown(Enum.KeyCode.D) then
+                velocity = c.CFrame.RightVector * g -- Right direction relative to camera's RightVector
+            elseif a:IsKeyDown(shiftKey) and a:IsKeyDown(Enum.KeyCode.F) then
+                velocity = c.CFrame.UpVector * g -- Up direction relative to camera's UpVector
+            elseif a:IsKeyDown(shiftKey) and a:IsKeyDown(Enum.KeyCode.LeftControl) then
+                velocity = -c.CFrame.UpVector * g -- Down direction relative to camera's UpVector
+            end
+
+            -- Apply the calculated velocity
+            applyVelocity(part, velocity)
+        end
+    end
+end
+
+a.InputBegan:Connect(function(C, D)
+    if D then return end
+    if C.KeyCode == f and a:IsKeyDown(shiftKey) then
+        task.spawn(function() 
+            if a:IsKeyDown(f) and a:IsKeyDown(shiftKey) then
+                moveParts()
+                i = true
+                for _, part in ipairs(k) do
+                    part.Anchored = false
+                    local connection = b.Heartbeat:Connect(function()
+                        moveParts()
+                    end)
+                    table.insert(j, connection)
+                end
+            end
+        end)
+    end
+end)
+
+a.InputEnded:Connect(function(C)
+    if C.KeyCode == f or C.KeyCode == shiftKey then
+        i = false
+        -- Disconnect and stop the velocity when released
+        for _, connection in ipairs(j) do
+            connection:Disconnect()
+        end
+        j = {}
+        -- Remove velocity
+        for _, part in ipairs(k) do
+            removeVelocity(part)
+        end
+    end
+end)
+
+workspace.DescendantAdded:Connect(function(G)
+    if r(G) then
+        table.insert(k, G)
+    end
+end)
+
+workspace.DescendantRemoving:Connect(function(G)
+    for H, E in ipairs(k) do
+        if E == G then
+            table.remove(k, H)
+            break
+        end
+    end
+end)
+
+for _, G in ipairs(workspace:GetDescendants()) do
+    if r(G) then
+        table.insert(k, G)
+    end
+end
