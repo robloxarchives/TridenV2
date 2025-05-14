@@ -11,7 +11,7 @@ local top = LocalCharacter:WaitForChild("Top")
 -- Config
 local DEFAULT_SPEED = 70
 local MIN_SPEED = 17
-local CAMERA_SPEED = 70
+local CAMERA_SPEED = 80
 local bhop_enabled = true
 local downcliff_mode = false
 
