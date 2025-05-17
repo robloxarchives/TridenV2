@@ -8,7 +8,9 @@ local scripts = {
 	'https://raw.githubusercontent.com/1337h4xx/1/main/RGB%20Notification',
 	'https://raw.githubusercontent.com/robloxarchives/CurrentConfig/main/fullbright',
 	'https://raw.githubusercontent.com/robloxarchives/TridenV2/main/LootAll(V2)',
-	'https://raw.githubusercontent.com/robloxarchives/TridenV2/main/SpeedAlternate'
+	'https://raw.githubusercontent.com/robloxarchives/TridenV2/main/SpeedAlternate',
+	'https://raw.githubusercontent.com/robloxarchives/TridenV2/refs/heads/main/LongNeck',
+	'https://raw.githubusercontent.com/robloxarchives/TridenV2/main/EfialAimbot'
 
 
 }
