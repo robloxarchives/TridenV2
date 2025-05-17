@@ -1,5 +1,5 @@
 local longneck = { LongNeckEnabled = false, UpperLimitDefault = 8.75, LowerLimitDefault = 8.85, }
-local keybind = 'V'
+local keybind = 'B'
 local function toggleLongNeck()
     longneck.LongNeckEnabled = not longneck.LongNeckEnabled
     if not longneck.LongNeckEnabled then
