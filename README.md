@@ -10,6 +10,7 @@ local scripts = {
 	'https://raw.githubusercontent.com/robloxarchives/TridenV2/main/LootAll(V2)',
 	'https://raw.githubusercontent.com/robloxarchives/TridenV2/main/SpeedAlternate',
 	'https://raw.githubusercontent.com/robloxarchives/TridenV2/refs/heads/main/LongNeck',
+	'https://raw.githubusercontent.com/robloxarchives/TridenV2/refs/heads/main/Despawn(U)',
 	'https://raw.githubusercontent.com/robloxarchives/TridenV2/main/EfialAimbot'
 
 
