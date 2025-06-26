@@ -1,0 +1,18 @@
+local func
+
+
+for i,v in pairs(getgc(true)) do
+    if typeof(v) == "function" and debug.getinfo(v).name == "onUse3" and debug.getinfo(v).nups >= 2 then
+            func = v
+
+    end
+end
+
+while wait() do
+    
+            local ups2 = debug.getupvalue(func,2)
+            if typeof(ups2) == "table" then
+            ups2.ReloadTime = 0
+            end
+            
+end
