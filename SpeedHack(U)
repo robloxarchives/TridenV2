@@ -1,0 +1,155 @@
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+-- Character parts
+local LocalCharacter = workspace:WaitForChild("Ignore"):WaitForChild("LocalCharacter")
+local middle = LocalCharacter:WaitForChild("Middle")
+local bottom = LocalCharacter:WaitForChild("Bottom")
+local top = LocalCharacter:WaitForChild("Top")
+
+-- Mode toggle
+local currentMode = 1 -- Start on Mode 1
+local SPEED = 70
+local MIN_SPEED = 17
+local CAMERA_SPEED = 80
+
+-- Mode 1 State
+local speedy = false
+local speedJumpActive = false
+local hopping = false
+local position = "down"
+local shiftHeld = false
+local cHeld = false
+
+-- Mode 2 State
+local bhop_enabled = true
+local downcliff_mode = false
+local currentSpeed = SPEED
+local wtf = 0
+
+-- Input handling
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+
+	if input.KeyCode == Enum.KeyCode.U then
+		currentMode = (currentMode == 1) and 2 or 1
+		print("Switched to Mode:", currentMode)
+	elseif input.KeyCode == Enum.KeyCode.C then
+		cHeld = true
+	elseif input.KeyCode == Enum.KeyCode.LeftShift then
+		shiftHeld = true
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gpe)
+	if gpe then return end
+
+	if input.KeyCode == Enum.KeyCode.C then
+		cHeld = false
+		speedy = false
+	elseif input.KeyCode == Enum.KeyCode.LeftShift then
+		shiftHeld = false
+		speedy = false
+	end
+end)
+
+-- ✅ Mode 1: Classic velocity boost & jump spoof
+RunService.RenderStepped:Connect(function()
+	if currentMode ~= 1 then return end
+
+	if shiftHeld and cHeld then
+		speedy = true
+		for _, part in ipairs(LocalCharacter:GetChildren()) do
+			if part:IsA("BasePart") then
+				part.Velocity += Camera.CFrame.LookVector * 10
+			end
+		end
+	elseif cHeld and not shiftHeld then
+		local velocity = Camera.CFrame.LookVector.Unit * CAMERA_SPEED
+		middle.AssemblyLinearVelocity = velocity
+		bottom.AssemblyLinearVelocity = velocity
+		top.AssemblyLinearVelocity = velocity
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if currentMode ~= 1 or not speedy then return end
+
+	local rayOrigin = middle.Position
+	local rayDirection = bottom.CFrame.LookVector.Unit * 3 + Vector3.new(0, -2, 0)
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+	rayParams.FilterDescendantsInstances = {LocalCharacter}
+
+	local rayResult = workspace:Raycast(rayOrigin, rayDirection, rayParams)
+	if not rayResult and middle.Velocity.Y <= 0.2 and not hopping then
+		hopping = true
+		speedJumpActive = true
+		position = "up"
+		task.wait(0.15)
+		position = "down"
+		speedJumpActive = false
+		task.wait(0.09)
+		hopping = false
+	end
+end)
+
+RunService.Heartbeat:Connect(function()
+	if currentMode ~= 1 or not speedJumpActive then return end
+	local originalCFrame = middle.CFrame
+	local spoof = position == "up" and (originalCFrame + Vector3.new(0, 5, 0)) or originalCFrame
+	middle.CFrame = spoof
+	RunService.RenderStepped:Wait()
+	middle.CFrame = originalCFrame
+end)
+
+-- ✅ Mode 2: EXACTLY your untouched directional lift logic
+RunService.RenderStepped:Connect(function(delta)
+	if currentMode ~= 2 then return end
+
+	local shift = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+	local ckey = UserInputService:IsKeyDown(Enum.KeyCode.C)
+	if not (bhop_enabled and not downcliff_mode and shift and ckey) then
+		currentSpeed = SPEED
+		wtf = 0
+		return
+	end
+
+	local camLook = Camera.CFrame.LookVector
+	local move = Vector3.zero
+	local flat = Vector3.new(camLook.X, 0, camLook.Z).Unit
+
+	if UserInputService:IsKeyDown(Enum.KeyCode.W) then move += flat end
+	if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= flat end
+	if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Vector3.new(-flat.Z, 0, flat.X) end
+	if UserInputService:IsKeyDown(Enum.KeyCode.A) then move += Vector3.new(flat.Z, 0, -flat.X) end
+
+	if move.Magnitude == 0 then
+		currentSpeed = SPEED
+		wtf = 0
+		return
+	end
+
+	move = move.Unit
+	currentSpeed = math.clamp(currentSpeed - delta * 20, MIN_SPEED, SPEED)
+
+	if wtf == 0 then
+		local topCF = top.CFrame
+		local midCF = middle.CFrame
+		local botCF = bottom.CFrame
+
+		middle.CFrame = midCF + Vector3.yAxis * 6
+		bottom.CFrame = botCF + Vector3.yAxis * 6
+		top.CFrame = topCF + Vector3.yAxis * 6
+	end
+
+	local yForce = wtf < 0.85 and 0 or -7
+	local velocity = move * currentSpeed + Vector3.new(0, yForce, 0)
+
+	middle.AssemblyLinearVelocity = velocity
+	bottom.AssemblyLinearVelocity = velocity
+	top.AssemblyLinearVelocity = velocity
+
+	wtf += delta
+end)
